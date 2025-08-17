@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroAlign - AI-Powered Fatigue Detection & Smart Scheduling</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #8b5cf6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1f2937;
+            --light-color: #f9fafb;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            padding: 30px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #6b7280;
+            font-size: 1.1rem;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid var(--primary-color);
+            transition: transform 0.3s ease;
+        }
+        
+        .status-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .status-card.low-fatigue {
+            border-left-color: var(--success-color);
+        }
+        
+        .status-card.moderate-fatigue {
+            border-left-color: var(--warning-color);
+        }
+        
+        .status-card.high-fatigue {
+            border-left-color: var(--danger-color);
+        }
+        
+        .fatigue-score {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .fatigue-score.low {
+            color: var(--success-color);
+        }
+        
+        .fatigue-score.moderate {
+            color: var(--warning-color);
+        }
+        
+        .fatigue-score.high {
+            color: var(--danger-color);
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+        
+        .webcam-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+        
+        #webcam-video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .recommendations {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+        
+        .recommendation-item {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .recommendation-item.high-priority {
+            border-left-color: var(--danger-color);
+            background: #fef2f2;
+        }
+        
+        .recommendation-item.medium-priority {
+            border-left-color: var(--warning-color);
+            background: #fffbeb;
+        }
+        
+        .schedule-item {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .schedule-item.optimized {
+            border-left-color: var(--primary-color);
+            background: #f0f9ff;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 25px;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            background: #5855eb;
+            transform: translateY(-2px);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .notification.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .notification.error {
+            border-left: 4px solid var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-brain"></i> NeuroAlign</h1>
+            <p>AI-Powered Fatigue Detection & Smart Scheduling System</p>
+        </div>
+
+        <!-- Real-time Fatigue Monitoring -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="status-card" id="fatigue-status">
+                    <h3><i class="fas fa-eye"></i> Real-time Fatigue Monitor</h3>
+                    <div class="text-center">
+                        <div class="fatigue-score" id="current-fatigue-score">0.0</div>
+                        <p class="text-muted">Current Fatigue Level</p>
+                        <div id="fatigue-level-badge" class="badge bg-success">Low</div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">Last updated: <span id="last-update">Never</span></small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="webcam-container">
+                    <h3><i class="fas fa-camera"></i> Webcam Analysis</h3>
+                    <video id="webcam-video" autoplay muted></video>
+                    <div class="mt-3">
+                        <button class="btn btn-primary" id="start-webcam">
+                            <i class="fas fa-play"></i> Start Monitoring
+                        </button>
+                        <button class="btn btn-secondary" id="stop-webcam" style="display: none;">
+                            <i class="fas fa-stop"></i> Stop Monitoring
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">Blink Rate:</small><br>
+                                <span id="blink-rate">0.0</span> blinks/sec
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Facial Tension:</small><br>
+                                <span id="facial-tension">0.0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h3><i class="fas fa-chart-line"></i> Fatigue Trends</h3>
+                    <canvas id="fatigue-chart"></canvas>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h3><i class="fas fa-battery-three-quarters"></i> Energy Levels</h3>
+                    <canvas id="energy-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bio-rhythm and Scheduling -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="status-card">
+                    <h3><i class="fas fa-heartbeat"></i> Bio-Rhythm Analysis</h3>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4" id="current-energy">0.0</div>
+                                <small class="text-muted">Current Energy</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4" id="heart-rate">0</div>
+                                <small class="text-muted">Heart Rate (bpm)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary" id="connect-wearable">
+                            <i class="fas fa-watch"></i> Connect Wearable
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="status-card">
+                    <h3><i class="fas fa-calendar-alt"></i> Smart Scheduling</h3>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4" id="total-schedules">0</div>
+                                <small class="text-muted">Total Tasks</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4" id="optimized-schedules">0</div>
+                                <small class="text-muted">Optimized</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary" id="optimize-schedule">
+                            <i class="fas fa-magic"></i> Optimize Schedule
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations and Schedule -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="recommendations">
+                    <h3><i class="fas fa-lightbulb"></i> AI Recommendations</h3>
+                    <div id="recommendations-list">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner loading"></i> Loading recommendations...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="recommendations">
+                    <h3><i class="fas fa-tasks"></i> Today's Schedule</h3>
+                    <div id="schedule-list">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner loading"></i> Loading schedule...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notification-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let websocket = null;
+        let videoStream = null;
+        let fatigueChart = null;
+        let energyChart = null;
+        let isMonitoring = false;
+        let currentUser = { id: 1, name: "Demo User" }; // Default user
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            loadDashboardData();
+            setupEventListeners();
+            connectWebSocket();
+        });
+
+        // Initialize charts
+        function initializeCharts() {
+            // Fatigue Chart
+            const fatigueCtx = document.getElementById('fatigue-chart').getContext('2d');
+            fatigueChart = new Chart(fatigueCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Overall Fatigue',
+                        data: [],
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1
+                        }
+                    }
+                }
+            });
+
+            // Energy Chart
+            const energyCtx = document.getElementById('energy-chart').getContext('2d');
+            energyChart = new Chart(energyCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Energy Level',
+                        data: [],
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Webcam controls
+            document.getElementById('start-webcam').addEventListener('click', startWebcamMonitoring);
+            document.getElementById('stop-webcam').addEventListener('click', stopWebcamMonitoring);
+            
+            // Wearable device connection
+            document.getElementById('connect-wearable').addEventListener('click', connectWearableDevice);
+            
+            // Schedule optimization
+            document.getElementById('optimize-schedule').addEventListener('click', optimizeSchedule);
+        }
+
+        // Connect WebSocket
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/fatigue`;
+            
+            websocket = new WebSocket(wsUrl);
+            
+            websocket.onopen = function() {
+                console.log('WebSocket connected');
+                showNotification('Connected to real-time monitoring', 'success');
+            };
+            
+            websocket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            websocket.onclose = function() {
+                console.log('WebSocket disconnected');
+                showNotification('Connection lost. Reconnecting...', 'warning');
+                setTimeout(connectWebSocket, 5000);
+            };
+            
+            websocket.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                showNotification('Connection error', 'error');
+            };
+        }
+
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'fatigue_analysis':
+                    updateFatigueDisplay(data.data);
+                    break;
+                case 'typing_analysis':
+                    updateTypingDisplay(data.data);
+                    break;
+                case 'overall_fatigue_score':
+                    updateOverallFatigue(data.data);
+                    break;
+                case 'energy_prediction':
+                    updateEnergyDisplay(data.data);
+                    break;
+            }
+        }
+
+        // Start webcam monitoring
+        async function startWebcamMonitoring() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: 640, 
+                        height: 480,
+                        facingMode: 'user'
+                    } 
+                });
+                
+                const video = document.getElementById('webcam-video');
+                video.srcObject = stream;
+                videoStream = stream;
+                
+                document.getElementById('start-webcam').style.display = 'none';
+                document.getElementById('stop-webcam').style.display = 'inline-block';
+                
+                isMonitoring = true;
+                startFrameCapture();
+                
+                showNotification('Webcam monitoring started', 'success');
+            } catch (error) {
+                console.error('Error accessing webcam:', error);
+                showNotification('Error accessing webcam', 'error');
+            }
+        }
+
+        // Stop webcam monitoring
+        function stopWebcamMonitoring() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            
+            const video = document.getElementById('webcam-video');
+            video.srcObject = null;
+            
+            document.getElementById('start-webcam').style.display = 'inline-block';
+            document.getElementById('stop-webcam').style.display = 'none';
+            
+            isMonitoring = false;
+            
+            showNotification('Webcam monitoring stopped', 'success');
+        }
+
+        // Start frame capture for analysis
+        function startFrameCapture() {
+            if (!isMonitoring) return;
+            
+            const video = document.getElementById('webcam-video');
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            const frameData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Send frame data via WebSocket
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                websocket.send(JSON.stringify({
+                    type: 'webcam_frame',
+                    frame: frameData,
+                    timestamp: new Date().toISOString()
+                }));
+            }
+            
+            // Continue capturing frames
+            setTimeout(startFrameCapture, 1000); // Capture every second
+        }
+
+        // Update fatigue display
+        function updateFatigueDisplay(data) {
+            const scoreElement = document.getElementById('current-fatigue-score');
+            const levelBadge = document.getElementById('fatigue-level-badge');
+            const statusCard = document.getElementById('fatigue-status');
+            
+            const score = data.facial_fatigue_score || 0;
+            scoreElement.textContent = score.toFixed(2);
+            
+            // Update fatigue level and styling
+            if (score < 0.3) {
+                levelBadge.textContent = 'Low';
+                levelBadge.className = 'badge bg-success';
+                statusCard.className = 'status-card low-fatigue';
+                scoreElement.className = 'fatigue-score low';
+            } else if (score < 0.6) {
+                levelBadge.textContent = 'Moderate';
+                levelBadge.className = 'badge bg-warning';
+                statusCard.className = 'status-card moderate-fatigue';
+                scoreElement.className = 'fatigue-score moderate';
+            } else {
+                levelBadge.textContent = 'High';
+                levelBadge.className = 'badge bg-danger';
+                statusCard.className = 'status-card high-fatigue';
+                scoreElement.className = 'fatigue-score high';
+            }
+            
+            // Update metrics
+            document.getElementById('blink-rate').textContent = (data.blink_rate || 0).toFixed(1);
+            document.getElementById('facial-tension').textContent = (data.facial_tension_score || 0).toFixed(2);
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+            
+            // Update chart
+            updateFatigueChart(score);
+        }
+
+        // Update typing display
+        function updateTypingDisplay(data) {
+            // Handle typing analysis data
+            console.log('Typing analysis:', data);
+        }
+
+        // Update overall fatigue
+        function updateOverallFatigue(data) {
+            // Handle overall fatigue data
+            console.log('Overall fatigue:', data);
+        }
+
+        // Update energy display
+        function updateEnergyDisplay(data) {
+            document.getElementById('current-energy').textContent = (data.current_energy_level || 0).toFixed(2);
+            
+            // Update energy chart
+            updateEnergyChart(data.current_energy_level || 0);
+        }
+
+        // Update fatigue chart
+        function updateFatigueChart(score) {
+            const now = new Date().toLocaleTimeString();
+            
+            fatigueChart.data.labels.push(now);
+            fatigueChart.data.datasets[0].data.push(score);
+            
+            // Keep only last 20 data points
+            if (fatigueChart.data.labels.length > 20) {
+                fatigueChart.data.labels.shift();
+                fatigueChart.data.datasets[0].data.shift();
+            }
+            
+            fatigueChart.update();
+        }
+
+        // Update energy chart
+        function updateEnergyChart(energy) {
+            const now = new Date().toLocaleTimeString();
+            
+            energyChart.data.labels.push(now);
+            energyChart.data.datasets[0].data.push(energy);
+            
+            // Keep only last 20 data points
+            if (energyChart.data.labels.length > 20) {
+                energyChart.data.labels.shift();
+                energyChart.data.datasets[0].data.shift();
+            }
+            
+            energyChart.update();
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load dashboard overview
+                const response = await fetch(`/api/dashboard/overview/${currentUser.id}`);
+                const data = await response.json();
+                
+                updateDashboardOverview(data);
+                
+                // Load recommendations
+                loadRecommendations();
+                
+                // Load schedule
+                loadSchedule();
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                showNotification('Error loading dashboard data', 'error');
+            }
+        }
+
+        // Update dashboard overview
+        function updateDashboardOverview(data) {
+            // Update fatigue overview
+            const fatigueOverview = data.fatigue_overview;
+            document.getElementById('current-fatigue-score').textContent = fatigueOverview.current_score.toFixed(2);
+            
+            // Update bio-rhythm overview
+            const bioOverview = data.bio_rhythm_overview;
+            document.getElementById('current-energy').textContent = bioOverview.average_energy.toFixed(2);
+            document.getElementById('heart-rate').textContent = Math.round(bioOverview.average_heart_rate || 0);
+            
+            // Update schedule overview
+            const scheduleOverview = data.schedule_overview;
+            document.getElementById('total-schedules').textContent = scheduleOverview.total_schedules;
+            document.getElementById('optimized-schedules').textContent = scheduleOverview.optimized_schedules;
+        }
+
+        // Load recommendations
+        async function loadRecommendations() {
+            try {
+                const response = await fetch(`/api/dashboard/recommendations/${currentUser.id}`);
+                const recommendations = await response.json();
+                
+                const container = document.getElementById('recommendations-list');
+                container.innerHTML = '';
+                
+                if (recommendations.length === 0) {
+                    container.innerHTML = '<div class="text-center text-muted">No recommendations at this time</div>';
+                    return;
+                }
+                
+                recommendations.forEach(rec => {
+                    const item = document.createElement('div');
+                    item.className = `recommendation-item ${rec.priority}-priority`;
+                    item.innerHTML = `
+                        <h6>${rec.title}</h6>
+                        <p class="mb-2">${rec.message}</p>
+                        <ul class="mb-0">
+                            ${rec.actions.map(action => `<li>${action}</li>`).join('')}
+                        </ul>
+                    `;
+                    container.appendChild(item);
+                });
+                
+            } catch (error) {
+                console.error('Error loading recommendations:', error);
+            }
+        }
+
+        // Load schedule
+        async function loadSchedule() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const response = await fetch(`/api/scheduling/schedule/${currentUser.id}?date=${today}`);
+                const schedules = await response.json();
+                
+                const container = document.getElementById('schedule-list');
+                container.innerHTML = '';
+                
+                if (schedules.length === 0) {
+                    container.innerHTML = '<div class="text-center text-muted">No schedules for today</div>';
+                    return;
+                }
+                
+                schedules.forEach(schedule => {
+                    const item = document.createElement('div');
+                    item.className = `schedule-item ${schedule.is_optimized ? 'optimized' : ''}`;
+                    item.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">${schedule.title}</h6>
+                                <small class="text-muted">
+                                    ${new Date(schedule.start_time).toLocaleTimeString()} - 
+                                    ${new Date(schedule.end_time).toLocaleTimeString()}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-${schedule.is_optimized ? 'primary' : 'secondary'}">
+                                    ${schedule.is_optimized ? 'Optimized' : 'Pending'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+                
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+            }
+        }
+
+        // Connect wearable device
+        function connectWearableDevice() {
+            showNotification('Connecting to wearable device...', 'info');
+            // Simulate wearable connection
+            setTimeout(() => {
+                document.getElementById('heart-rate').textContent = Math.floor(Math.random() * 30) + 60;
+                showNotification('Wearable device connected', 'success');
+            }, 2000);
+        }
+
+        // Optimize schedule
+        async function optimizeSchedule() {
+            try {
+                showNotification('Optimizing schedule...', 'info');
+                
+                const response = await fetch(`/api/scheduling/batch-optimize/${currentUser.id}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                showNotification(result.message, 'success');
+                loadSchedule(); // Reload schedule
+                
+            } catch (error) {
+                console.error('Error optimizing schedule:', error);
+                showNotification('Error optimizing schedule', 'error');
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times-circle' : 'info-circle'} me-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            // Hide and remove notification
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => container.removeChild(notification), 300);
+            }, 5000);
+        }
+
+        // Simulate typing monitoring
+        function startTypingMonitoring() {
+            let lastKeyTime = Date.now();
+            let keystrokes = [];
+            
+            document.addEventListener('keydown', function(event) {
+                const currentTime = Date.now();
+                const interval = currentTime - lastKeyTime;
+                
+                keystrokes.push({
+                    key: event.key,
+                    timestamp: new Date(currentTime),
+                    interval: interval
+                });
+                
+                lastKeyTime = currentTime;
+                
+                // Send typing data every 10 keystrokes
+                if (keystrokes.length >= 10) {
+                    if (websocket && websocket.readyState === WebSocket.OPEN) {
+                        websocket.send(JSON.stringify({
+                            type: 'typing_data',
+                            typing_pattern: {
+                                keystrokes: keystrokes,
+                                backspaces: keystrokes.filter(k => k.key === 'Backspace'),
+                                hesitations: keystrokes.filter(k => k.interval > 1000)
+                            },
+                            timestamp: new Date().toISOString()
+                        }));
+                    }
+                    keystrokes = [];
+                }
+            });
+        }
+
+        // Start typing monitoring
+        startTypingMonitoring();
+    </script>
+</body>
+</html>

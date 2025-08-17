@@ -30,21 +30,25 @@ NeuroAlign is a comprehensive fatigue detection system that combines **mental bu
 
 ```
 neuroalign/
-├── backend/                 # FastAPI backend
-│   ├── app/
-│   │   ├── models/         # ML models
-│   │   ├── api/            # API endpoints
-│   │   ├── services/       # Business logic
-│   │   └── utils/          # Utilities
-├── frontend/               # React frontend
-│   ├── src/
-│   │   ├── components/     # UI components
-│   │   ├── hooks/          # Custom hooks
-│   │   ├── services/       # API calls
-│   │   └── utils/          # Utilities
-├── ml_models/              # Trained AI models
-├── data/                   # Training data
-└── docs/                   # Documentation
+├── neuroalign/             # Main application package
+│   ├── models/            # Database models
+│   ├── api/               # API routes
+│   │   └── routes/        # Endpoint handlers
+│   ├── services/          # Core services
+│   │   ├── fatigue_detector.py      # Fatigue detection
+│   │   ├── bio_rhythm_analyzer.py   # Bio-rhythm analysis
+│   │   └── websocket_manager.py     # Real-time communication
+│   ├── utils/             # Utilities
+│   │   ├── config.py      # Configuration
+│   │   └── database.py    # Database utilities
+│   ├── static/            # Static files
+│   └── templates/         # HTML templates
+├── ml_models/             # Trained AI models
+├── data/                  # Training data
+├── requirements.txt       # Python dependencies
+├── run.py                # Application entry point
+├── test_system.py        # System test suite
+└── README.md             # Documentation
 ```
 
 ## 🚀 Quick Start
@@ -55,24 +59,40 @@ neuroalign/
    cd neuroalign
    ```
 
-2. **Backend setup**:
+2. **Install dependencies**:
    ```bash
-   cd backend
    pip install -r requirements.txt
-   uvicorn app.main:app --reload
    ```
 
-3. **Frontend setup**:
+3. **Test the system**:
    ```bash
-   cd frontend
-   npm install
-   npm start
+   python test_system.py
    ```
 
-4. **Access the application**:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
+4. **Run the application**:
+   ```bash
+   python run.py
+   ```
+
+5. **Access the application**:
+   - Dashboard: http://localhost:8000
    - API Docs: http://localhost:8000/docs
+   - WebSocket: ws://localhost:8000/ws/fatigue
+
+## 🧪 Testing
+
+Run the test suite to verify all components work correctly:
+
+```bash
+python test_system.py
+```
+
+This will test:
+- ✅ Module imports
+- ✅ Fatigue detection service
+- ✅ Bio-rhythm analysis
+- ✅ WebSocket management
+- ✅ Database connectivity
 
 ## 🔬 How It Works
 
